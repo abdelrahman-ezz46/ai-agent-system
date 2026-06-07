@@ -1,0 +1,9 @@
+# Core dependencies for the agent.
+# We keep this list tiny on purpose — every line is something you can explain.
+
+anthropic>=0.49.0   # Claude provider (only needed if you use provider: claude)
+openai>=1.40.0      # Talks to ANY OpenAI-compatible endpoint: Ollama, Mistral,
+                    #   Google (OpenAI-compat), GitHub Models, Together, Groq...
+rich>=13.7.0        # The "nice TUI" — colored panels, spinners, markdown
+textual>=0.50       # The full-screen TUI (python main.py --tui)
+PyYAML>=6.0         # Reads config.yaml

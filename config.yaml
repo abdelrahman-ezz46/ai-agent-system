@@ -1,0 +1,61 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  Agent configuration — this is the ONE file a user edits after downloading.
+#  Pick a provider, point it at a model, and (if needed) drop in an API key.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Which "brain" to use. The agent code doesn't care which one — that's the
+# whole point of the provider abstraction. Options:
+#   ollama  -> free, local, no API key   (Milestone 1 default)
+#   claude  -> best tool-use quality, needs ANTHROPIC_API_KEY
+#   mistral / google / github / openai / groq / together -> any OpenAI-compatible API
+provider: ollama
+
+# The specific model to ask for, in that provider's naming.
+#   ollama : "llama3.1", "qwen2.5", "mistral"        (run `ollama pull <name>` first)
+#   claude : "claude-opus-4-8", "claude-sonnet-4-6", "claude-haiku-4-5"
+model: qwen3.5        # you have this pulled; good at tool-calling. (llama3, mistral also work)
+
+# Where to send requests. Only used by OpenAI-compatible providers (not claude).
+# This is the magic line that lets ONE adapter serve many providers — you just
+# change the URL. Defaults below; uncomment/swap as needed.
+base_url: http://localhost:11434/v1        # Ollama (local)
+#   Mistral:        https://api.mistral.ai/v1
+#   Google (compat):https://generativelanguage.googleapis.com/v1beta/openai
+#   GitHub Models:  https://models.inference.ai.azure.com
+#   Groq:           https://api.groq.com/openai/v1
+#   Together:       https://api.together.xyz/v1
+
+# API key for the chosen provider. Leave blank for Ollama (it needs none).
+# SECURITY: prefer setting an environment variable instead of pasting it here.
+#   - claude reads ANTHROPIC_API_KEY automatically (leave this blank)
+#   - others read AGENT_API_KEY if this is blank
+api_key: ""
+
+# ── Safety: the sandbox ──────────────────────────────────────────────────────
+# The agent may only read/write/operate inside these folders. Anything outside
+# is blocked with a clear message. "~" expands to your home directory.
+allowed_paths:
+  - ~/Downloads
+  - ~/agent-playground
+
+# Ask for confirmation before running anything that looks destructive
+# (rm, mv, dd, git push, > redirects, etc.). Highly recommended: leave true.
+confirm_dangerous: true
+
+# ── Long-term memory ─────────────────────────────────────────────────────────
+# Where the agent saves durable facts it learns about you. This file persists
+# across runs, so the agent gets better the more you use it. Delete it to make
+# the agent "forget everything."
+memory_file: agent_memory.json
+
+# Semantic recall: embeddings let the agent find memories by *meaning*, not just
+# matching words. Uses a LOCAL Ollama embedding model by default — free, no key.
+#   - Pull it once:  ollama pull nomic-embed-text
+#   - Set embed_model to "" to disable and fall back to keyword search.
+embed_model: nomic-embed-text
+embed_base_url: http://localhost:11434/v1
+
+# ── Skills ───────────────────────────────────────────────────────────────────
+# Folder of user-added skills. Each subfolder with a SKILL.md becomes a skill the
+# agent can use. See skills/README.md for how to write one.
+skills_dir: skills

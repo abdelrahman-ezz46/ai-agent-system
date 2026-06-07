@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# The agent's personal long-term memory — yours, not for the repo.
+agent_memory.json
+
+# OS noise
+.DS_Store
