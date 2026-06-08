@@ -418,4 +418,4 @@ broken skills being skipped, and the cross-thread TUI confirm modal.
 
 ---
 
-*Built with the Claude API patterns, local Ollama models, `rich`, and `textual`.*
+*Built with the Claude API patterns, local Ollama models.*
