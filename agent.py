@@ -39,20 +39,35 @@ You can only operate inside the user's allowed folders: {sandbox}.
 Be careful and concise."""
 
 # A hard cap so a confused model can't loop forever burning tokens / commands.
-MAX_STEPS = 12
+MAX_STEPS = 15
+
+# When the agent first declares it's done, we make it verify its own work with
+# tools before accepting the answer. Grounded self-checking (read the file back,
+# list the folder) catches "I think I did it" failures — a big precision win.
+VERIFY_PROMPT = (
+    "Before you finish, VERIFY you fully achieved the goal: \"{goal}\". "
+    "Check the actual result with your tools — read the file you wrote, list the "
+    "folder, or re-run the computation. If anything is missing, wrong, or only "
+    "partially done, fix it now. Then give your COMPLETE final answer, restating "
+    "the actual result or information requested (not just 'done' or 'verified'). "
+    "Only finish once you have confirmed, by inspection, that it is correct."
+)
 
 
 class Agent:
     def __init__(self, provider: Provider, registry: Registry,
                  sandbox: Sandbox, memory: Memory, confirm_dangerous: bool,
                  auto: bool = False, dry_run: bool = False,
-                 skills_overview: str = "", view=None):
+                 skills_overview: str = "", view=None, verify: bool = True):
         self.provider = provider
         self.registry = registry
         self.sandbox = sandbox
         self.memory = memory
         self.confirm_dangerous = confirm_dangerous
         self.skills_overview = skills_overview
+        # Self-verification: make the agent double-check its own work once before
+        # it's allowed to finish. Improves precision at the cost of a few steps.
+        self.verify = verify
         # Where narration goes. Defaults to the rich terminal UI; the
         # Textual TUI injects its own view object with the same methods.
         self.view = view if view is not None else ui
@@ -86,6 +101,7 @@ class Agent:
         # Recompute each run so newly-remembered facts take effect immediately,
         # and so retrieval is tailored to this specific goal.
         system = self._compose_system(goal)
+        verified = False   # have we run the one-time self-verification yet?
 
         for _ in range(MAX_STEPS):
             # ── THINK ───────────────────────────────────────────────────────
@@ -105,6 +121,16 @@ class Agent:
 
             # ── DONE? ───────────────────────────────────────────────────────
             if not reply.wants_tools:
+                # First time it declares done, force a grounded verification pass
+                # instead of accepting immediately.
+                if self.verify and not verified:
+                    verified = True
+                    self.view.info("verifying the result…")
+                    self.messages.append({
+                        "role": "user",
+                        "content": VERIFY_PROMPT.format(goal=goal),
+                    })
+                    continue
                 self.view.show_answer(reply.text)
                 return
 

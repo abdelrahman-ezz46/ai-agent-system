@@ -74,6 +74,7 @@ def build_agent(config: dict, args: argparse.Namespace):
         auto=args.auto,
         dry_run=args.dry_run,
         skills_overview=overview,
+        verify=config.get("verify", True),
     )
     return agent, sandbox, memory, skills
 

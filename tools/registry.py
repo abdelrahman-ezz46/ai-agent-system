@@ -57,12 +57,26 @@ class Registry:
     def run(self, name: str, arguments: dict) -> str:
         tool = self.get(name)
         if tool is None:
-            return f"Error: no such tool '{name}'."
+            available = ", ".join(self._tools)
+            return f"Error: no such tool '{name}'. Available tools: {available}."
+
+        # Validate arguments against the tool's schema BEFORE running, so the
+        # model gets a precise, actionable error instead of a confusing crash —
+        # this lets a weak model self-correct in one step instead of thrashing.
+        arguments = arguments or {}
+        schema = tool.parameters or {}
+        properties = schema.get("properties", {})
+        required = schema.get("required", [])
+        missing = [r for r in required if r not in arguments]
+        if missing:
+            return (f"Error: {name} is missing required argument(s): "
+                    f"{', '.join(missing)}. Expected arguments: {list(properties)}.")
+        unexpected = [k for k in arguments if properties and k not in properties]
+        if unexpected:
+            return (f"Error: {name} got unexpected argument(s): "
+                    f"{', '.join(unexpected)}. Valid arguments: {list(properties)}.")
+
         try:
             return tool.func(**arguments)
-        except TypeError as e:
-            # Usually the model passed wrong/missing arguments — tell it so it
-            # can correct itself on the next turn.
-            return f"Error calling {name}: {e}"
         except Exception as e:
             return f"Error while running {name}: {e}"

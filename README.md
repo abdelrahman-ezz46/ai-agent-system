@@ -29,6 +29,7 @@ with a full-screen UI.
 - [Configuration](#configuration)
 - [Project layout](#project-layout)
 - [Testing](#testing)
+- [Evaluation](#evaluation)
 - [Roadmap](#roadmap)
 
 ---
@@ -406,6 +407,36 @@ edge cases: dry-run blocking `rm -rf` and shell-based file-creation tricks,
 semantic recall rejecting unrelated queries, graceful provider-failure exits,
 broken skills being skipped, and the cross-thread TUI confirm modal.
 
+## Evaluation
+
+Most portfolio agents stop at "it works on my machine." This one is **measured**.
+The [`evals/`](evals/) folder runs the agent against a suite of tasks, each with
+a deterministic success check (files on disk, or the final answer), in isolated
+sandboxes, and reports a success rate.
+
+```bash
+python evals/runner.py --runs 3     # all tasks, 3 runs each
+python evals/compare.py --runs 3    # A/B a feature (self-verification off vs on)
+```
+
+**Why multiple runs?** LLM output is stochastic — a small local model makes
+different slips on different runs, so a single pass is noise (the score swung
+80% → 90% → 80% with no code change). The suite is built around **multi-run
+averaging and A/B comparison** — the honest way to claim a feature actually
+helped, rather than cherry-picking a lucky run.
+
+**Precision features (v2), each validated with the eval suite:**
+- **Self-verification** — before finishing, the agent checks its own work with
+  tools (reads the file back, lists the folder) and only then answers. **A/B-measured
+  with [`compare.py`](evals/compare.py): 83% → 90% (+7 pts) across 60 runs**
+  (10 tasks × 3, OFF vs ON on `qwen3.5`), with the largest gains on multi-step
+  transform tasks — not assumed.
+- **Argument validation** — malformed tool calls get precise error messages, so
+  a weak model self-corrects in one step instead of thrashing.
+
+> Honest caveat: two tasks showed a −1 flip (within run-to-run noise at n=3),
+> which is exactly why the suite reports multi-run means rather than a lucky pass.
+
 ## Roadmap
 
 - [x] **M1** — the loop + `run_shell` + Ollama/Claude adapters
@@ -414,7 +445,8 @@ broken skills being skipped, and the cross-thread TUI confirm modal.
 - [x] **M4** — semantic recall: embeddings + cosine similarity + keyword fallback
 - [x] **M5** — execution modes (`--auto`, `--dry-run`) + one-shot CLI + overrides
 - [x] **M6** — skills system + full-screen Textual UI
-- [ ] **next** — more built-in skills, conversation persistence, a web UI
+- [x] **v2** — eval harness + self-verification + arg-validation (measured)
+- [ ] **next** — web search/fetch, surgical `edit_file`, self-improving memory
 
 ---
 

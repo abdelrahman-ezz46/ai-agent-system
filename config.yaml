@@ -42,6 +42,11 @@ allowed_paths:
 # (rm, mv, dd, git push, > redirects, etc.). Highly recommended: leave true.
 confirm_dangerous: true
 
+# Self-verification: before finishing, the agent double-checks its own work with
+# tools (reads the file back, lists the folder). Improves precision/reliability
+# at the cost of a few extra steps. Set false for speed on simple tasks.
+verify: true
+
 # ── Long-term memory ─────────────────────────────────────────────────────────
 # Where the agent saves durable facts it learns about you. This file persists
 # across runs, so the agent gets better the more you use it. Delete it to make
